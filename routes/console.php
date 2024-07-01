@@ -10,5 +10,19 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote')->hourly();
 
 Schedule::call(function () {
-    DB::table('recent_users')->delete();
-})->daily();
+    
+    $mysqlData = DB::connection('mysql')->table('post')->get();
+    
+    foreach ($mysqlData as $data) {
+        
+        $existingData = DB::connection('pgsql')->table('Post_backup')->where('id', $data->id)->first();
+        
+        if ($existingData) {
+            
+            DB::connection('pgsql')->table('Post_backup')->where('id', $data->id)->update((array) $data);
+        } else {
+            
+            DB::connection('pgsql')->table('Post_backup')->insert((array) $data);
+        }
+    }
+})->everyTenSeconds();
